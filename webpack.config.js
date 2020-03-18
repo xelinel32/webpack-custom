@@ -5,6 +5,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssestWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 const TesrserWebpackPlugin = require('terser-webpack-plugin');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
 const isDev = process.env.NODE_ENV === 'development';
 const isProd = !isDev;
@@ -44,11 +45,39 @@ const cssLoaders = extra => {
   return loaders;
 };
 
+const plugins = () => {
+  const base = [
+    new HTMLWebpackPlugin({
+      template: './index.html',
+      minify: {
+        collapseWhitespace: isProd
+      }
+    }),
+    new CleanWebpackPlugin(),
+    new CopyWebpackPlugin([
+      // copy files
+      {
+        from: path.resolve(__dirname, 'src/favicon.ico'),
+        to: path.resolve(__dirname, 'dist')
+      }
+    ]),
+    new MiniCssExtractPlugin({
+      filename: filename('css')
+    })
+  ];
+
+  if (isProd) {
+    base.push(new BundleAnalyzerPlugin());
+  }
+
+  return base;
+};
+
 module.exports = {
   context: path.resolve(__dirname, 'src'), // where us output files
   mode: 'development',
   entry: {
-    main: './index.js',
+    main: ['@babel/polyfill', './index.js'],
     analytics: './analytics.js'
   }, // point start
   output: {
@@ -68,25 +97,8 @@ module.exports = {
     port: 7777,
     hot: isDev
   },
-  plugins: [
-    new HTMLWebpackPlugin({
-      template: './index.html',
-      minify: {
-        collapseWhitespace: isProd
-      }
-    }),
-    new CleanWebpackPlugin(),
-    new CopyWebpackPlugin([
-      // copy files
-      {
-        from: path.resolve(__dirname, 'src/favicon.ico'),
-        to: path.resolve(__dirname, 'dist')
-      }
-    ]),
-    new MiniCssExtractPlugin({
-      filename: filename('css')
-    })
-  ],
+  devtool: isDev ? 'source-map' : '',
+  plugins: plugins(),
   module: {
     // rules for another types
     rules: [
@@ -109,6 +121,17 @@ module.exports = {
       {
         test: /\.xml$/,
         use: ['xml-loader']
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/, // search without node modules(only src)
+        loader: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+            plugins: ['@babel/plugin-proposal-class-properties']
+          }
+        }
       }
     ]
   }

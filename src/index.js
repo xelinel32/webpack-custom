@@ -5,6 +5,7 @@ import xml from './assets/data';
 import WebpackLogo from '@/assets/webpack-logo';
 import './styles/styles.css';
 import './styles/style.sass';
+import './babel';
 
 const post = new Post('Webpack is it just', WebpackLogo);
 
